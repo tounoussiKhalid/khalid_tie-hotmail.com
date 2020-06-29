@@ -10,16 +10,16 @@ class CategoriesPage extends Component {
       articles: [],
       categories: [],
       newCategorie: {
-        category: ""
-      }
+        category: "",
+      },
     };
   }
 
   componentDidMount() {
-    Axios.get(URL + "/categories").then(response => {
+    Axios.get(URL + "/categories").then((response) => {
       console.log(response);
       this.setState({
-        categories: response.data
+        categories: response.data,
       });
     });
   }
@@ -27,9 +27,9 @@ class CategoriesPage extends Component {
   async createEntity(newData) {
     const categorie = await Axios.post(URL + "/categories", newData, {
       headers: {
-        "Content-Type": "application/json"
-      }
-    }).then(resp => {
+        "Content-Type": "application/json",
+      },
+    }).then((resp) => {
       return resp["data"];
     });
 
@@ -43,6 +43,13 @@ class CategoriesPage extends Component {
     return (
       <div ref={this.wrapper}>
         <MaterialTable
+          localization={{
+            body: {
+              editRow: {
+                deleteText: "Voulez-vous vraiment supprimer cette ligne?",
+              },
+            },
+          }}
           ma
           columns={[
             {
@@ -51,38 +58,38 @@ class CategoriesPage extends Component {
               type: "numeric",
               editable: "never",
               width: 50,
-              hidden: true
+              hidden: true,
             },
             {
               title: "Numéro",
               field: "number",
               type: "numeric",
               editable: "never",
-              width: 100
+              width: 100,
             },
 
             {
               title: "Catégorie",
-              field: "category"
-            }
+              field: "category",
+            },
           ]}
-          data={this.state.categories.map(category => {
+          data={this.state.categories.map((category) => {
             return {
               number: ++i,
               id: category["id"],
-              category: category["category"]
+              category: category["category"],
             };
           })}
           options={{
-            actionsColumnIndex: -1
+            actionsColumnIndex: -1,
           }}
           editable={{
-            onRowAdd: newData =>
+            onRowAdd: (newData) =>
               new Promise((resolve, reject) => {
                 setTimeout(async () => {
                   {
                     const data = this.state.articles;
-                    await this.createEntity(newData).then(response => {
+                    await this.createEntity(newData).then((response) => {
                       data.push(response);
                       this.setState({ data });
                     });
@@ -90,7 +97,7 @@ class CategoriesPage extends Component {
                   }
                   resolve();
                 }, 1000);
-              })
+              }),
           }}
           title="Categories"
         />

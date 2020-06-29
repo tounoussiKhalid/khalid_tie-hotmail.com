@@ -10,6 +10,7 @@ const URL = "http://localhost:8080/api";
 class UsersPage extends Component {
   constructor(props) {
     super(props);
+    this.selected = "";
     this.state = {
       users: [],
       roles: [],
@@ -18,81 +19,105 @@ class UsersPage extends Component {
         name: "",
         f_name: "",
         email: "",
-        password: ""
+        password: "",
       },
-      selected: []
+      selected: "",
     };
+  }
+
+  fetchUsers() {
+    Axios.get(URL + "/users").then((response) => {
+      console.log(JSON.stringify(response.data));
+      console.log(typeof response.data[0].roles);
+      this.setState({
+        users: response.data,
+      });
+    });
   }
 
   componentDidMount() {
     console.log(" this is called");
-    Axios.get(URL + "/users").then(response => {
+    Axios.get(URL + "/users").then((response) => {
       console.log(JSON.stringify(response.data));
       console.log(typeof response.data[0].roles);
       this.setState({
-        users: response.data
+        users: response.data,
       });
     });
 
-    Axios.get(URL + "/roles").then(response => {
+    Axios.get(URL + "/roles").then((response) => {
       console.log("ROLES :" + JSON.stringify(response.data));
       this.setState({
-        roles: response.data
+        roles: response.data,
       });
     });
   }
 
   async createEntity(newData) {
-    console.log(newData);
+    const user = await Axios.post(URL + "/users", newData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((resp) => {
+      return resp["data"];
+    });
+
+    return user;
   }
 
   async updateEntity(newData) {
-    newData = await this.findCategory(newData);
-
-    console.log("NEW DATA " + JSON.stringify(newData["category"]));
-    const article = await Axios.put(
-      URL + "/articles/" + newData["id"],
-      newData,
-      {
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    ).then(resp => {
+    console.log("NEW DATA " + JSON.stringify(newData));
+    const user = await Axios.put(URL + "/users/" + newData["id"], newData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then((resp) => {
       console.log("RESPONSE " + JSON.stringify(resp));
       return resp["data"];
     });
-    return article;
+    return user;
   }
 
-  deleteEntity(id) {
-    console.log(URL + "/articles/" + id);
-    Axios.delete(URL + "/articles/" + id)
-      .then(resp => JSON.stringify)
-      .then(resp => {
+  async deleteEntity(id) {
+    console.log(URL + "/users/" + id);
+    await Axios.delete(URL + "/users/" + id, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((resp) => JSON.stringify(resp))
+      .then((resp) => {
         console.log(resp);
       });
+    return;
   }
 
-  handleSelectChange = e => {
+  handleSelectChange = (e) => {
+    console.log("*************");
     console.log(JSON.stringify(e));
-    /*this.setState({
-      selected: [].slice.call(e.target.selectedOptions).map(o => {
-        return o.value;
-      })
-    });*/
+    console.log();
+    if (e != null) this.selected = e[0];
+    console.log(this.selected);
+    console.log("HAKILI*************");
   };
 
   render() {
     let i = 0;
     let roles = [];
-    this.state.roles.map(role => {
+    this.state.roles.map((role) => {
       roles.push({ value: role["id"], label: role["description"] });
     });
     console.log("RENDER ROLES ** " + JSON.stringify(roles));
     return (
       <div ref={this.wrapper}>
         <MaterialTable
+          localization={{
+            body: {
+              editRow: {
+                deleteText: "Voulez-vous vraiment supprimer cette ligne?",
+              },
+            },
+          }}
           ma
           columns={[
             {
@@ -101,61 +126,68 @@ class UsersPage extends Component {
               type: "numeric",
               editable: "never",
               width: 50,
-              hidden: true
+              hidden: true,
             },
             {
               title: "Numéro",
               field: "number",
               type: "numeric",
               editable: "never",
-              width: 100
+              width: 100,
             },
 
             {
               title: "Nom",
-              field: "name"
+              field: "name",
             },
             {
               title: "Prénom",
-              field: "f_name"
+              field: "f_name",
             },
             {
               title: "email",
-              field: "email"
+              field: "email",
             },
             {
               title: "password",
               field: "password",
               type: "password",
-              hidden: true
+              hidden: true,
             },
             {
               title: "rôles",
               field: "roles",
-              editComponent: x => {
+              editComponent: (x) => {
                 console.log("DEFUALT VAL -> " + JSON.stringify(x.value));
                 return (
                   <FormControl variant="outlined">
-                    <MultiSelect defaultVal={x.value} options={roles} />
+                    <MultiSelect
+                      onChange={this.handleSelectChange}
+                      defaultVal={x.value}
+                      options={roles}
+                    />
                   </FormControl>
                 );
               },
-              render: rowData => {
+              render: (rowData) => {
                 console.log(JSON.stringify(rowData));
                 console.log(
                   "THIS IS ROW DATA " +
-                    JSON.stringify(rowData.roles.map(role => role["label"]))
+                    JSON.stringify(rowData.roles.map((role) => role["label"]))
                 );
-                return rowData.roles.map(role => role["label"]).join(",");
-              }
-            }
+                return rowData.roles.map((role) => role["label"]).join(",");
+              },
+            },
           ]}
-          data={this.state.users.map(user => {
+          data={this.state.users.map((user) => {
             let roles = [];
-            user["roles"].map(role => {
-              console.log("*" + JSON.stringify(role));
-              roles.push({ value: role["id"], label: role["description"] });
+
+            console.log("*" + JSON.stringify(user["role"]));
+            roles.push({
+              value: user["role"]["id"],
+              label: user["role"]["description"],
             });
+
             console.log("USERS ROLES " + JSON.stringify(roles));
             return {
               number: ++i,
@@ -164,38 +196,58 @@ class UsersPage extends Component {
               f_name: user["f_name"],
               email: user["email"],
               password: user["password"],
-              roles
+              roles,
             };
           })}
           options={{
-            actionsColumnIndex: -1
+            actionsColumnIndex: -1,
           }}
           editable={{
-            onRowAdd: newData =>
+            onRowAdd: (newData) =>
               new Promise((resolve, reject) => {
+                newData["role"] = {
+                  id: this.selected["value"],
+                  description: this.selected["label"],
+                };
+                newData["password"] = "123456";
                 setTimeout(() => {
                   {
+                    let users = this.state.users;
+                    this.createEntity(newData).then((response) => {
+                      this.fetchUsers();
+                    });
                   }
                   resolve();
                 }, 1000);
               }),
             onRowUpdate: (newData, oldData) =>
               new Promise((resolve, reject) => {
-                console.log(newData);
-                setTimeout(() => {
+                newData["role"] = {
+                  id: newData["roles"][0]["value"],
+                  description: newData["roles"][0]["label"],
+                };
+                console.log("UPDATE !!!!!!!!" + JSON.stringify(newData));
+                setTimeout(async () => {
                   {
+                    const data = this.state.users;
+                    await this.updateEntity(newData).then((response) =>
+                      this.fetchUsers()
+                    );
                   }
                   resolve();
                 }, 500);
               }),
-            onRowDelete: oldData =>
+            onRowDelete: (oldData) =>
               new Promise((resolve, reject) => {
-                setTimeout(() => {
+                setTimeout(async () => {
                   {
+                    this.deleteEntity(oldData["id"]).then((resp) =>
+                      this.fetchUsers()
+                    );
                   }
                   resolve();
                 }, 1000);
-              })
+              }),
           }}
           title="Users"
         />

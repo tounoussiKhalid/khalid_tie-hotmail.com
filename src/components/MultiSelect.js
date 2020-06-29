@@ -18,9 +18,10 @@ class MultiSelect extends React.Component {
         options={this.props.options}
         className="basic-multi-select"
         classNamePrefix="select"
-        onChange={e => {
-          console.log("CLICKED" + JSON.stringify(e));
-        }}
+        // onChange={e => {
+        //   console.log("CLICKED" + JSON.stringify(e));
+        // }}
+        onChange={this.props.onChange}
       />
     );
   }
